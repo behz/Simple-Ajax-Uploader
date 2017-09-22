@@ -713,6 +713,7 @@ ss.SimpleUpload = function( options ) {
         encodeHeaders: true,
         autoCalibrate: true,
         relativeToParent: false,
+        inputZIndex: 16777270,
         onBlankSubmit: function() {},
         onAbort: function( filename, uploadBtn, size ) {},
         onChange: function( filename, extension, uploadBtn, size, file ) {},
@@ -1944,7 +1945,7 @@ ss.DragAndDrop = {
             collection = [];
 
         ss.addStyles( elem, {
-            'zIndex': 16777271
+            'zIndex': self._opts.inputZIndex + 1
         });
 
         elem.ondragenter = function( e ) {
@@ -2044,7 +2045,7 @@ ss.extendObj( ss.SimpleUpload.prototype, {
             'padding' : 0,
             'opacity' : 0,
             'direction' : 'ltr',
-            'zIndex': 16777270
+            'zIndex': self._opts.inputZIndex
         });
 
         if ( div.style.opacity !== '0' ) {
@@ -2060,7 +2061,7 @@ ss.extendObj( ss.SimpleUpload.prototype, {
             'fontFamily' : 'sans-serif',
             'cursor' : 'pointer',
             'height' : '100%',
-            'zIndex': 16777270
+            'zIndex': self._opts.inputZIndex
         });
 
         this._input.turnOff = ss.addEvent( this._input, 'change', function() {
