@@ -256,19 +256,19 @@ ss.parseJSON = function( data ) {
         false;
 };
 
-ss.getBox = function( elem ) {
+ss.getBox = function( elem, parentElement) {
     "use strict";
 
     var box,
-        docElem,
+        parentElementBox,
         top = 0,
         left = 0;
 
     if ( elem.getBoundingClientRect ) {
         box = elem.getBoundingClientRect();
-        docElem = document.documentElement;
-        top = box.top + ( window.pageYOffset || docElem.scrollTop )  - ( docElem.clientTop  || 0 );
-        left = box.left + ( window.pageXOffset || docElem.scrollLeft ) - ( docElem.clientLeft || 0 );
+        parentElementBox = parentElement.getBoundingClientRect();
+        top = box.top + ( window.pageYOffset || parentElement.scrollTop )  - ( parentElement.clientTop  || 0 ) - parentElementBox.top;
+        left = box.left + ( window.pageXOffset || parentElement.scrollLeft ) - ( parentElement.clientLeft || 0 ) - parentElementBox.left;
 
     } else {
         do {
@@ -304,10 +304,10 @@ ss.addStyles = function( elem, styles ) {
 * element on top of the specified element
 * copying position and dimensions.
 */
-ss.copyLayout = function( from, to ) {
+ss.copyLayout = function( from, to, parentElement ) {
     "use strict";
 
-    var box = ss.getBox( from );
+    var box = ss.getBox( from, parentElement );
 
     ss.addStyles( to, {
         position: 'absolute',
@@ -634,6 +634,35 @@ ss.verifyElem = function( elem ) {
     return elem;
 };
 
+/**
+ Find the nearest common ancestors of two or more nodes?
+ https://stackoverflow.com/a/7648545
+ * @param {Element(s)} node
+ * @return {Element}
+ */
+ss.getCommonAncestor = function( node /*, node2, node3, ... nodeN */ ) {
+    if (!node || node.nodeType !== 1) return undefined;
+
+    var nodes   = [].slice.call(arguments, 1)
+        , method  = 'compareDocumentPosition'
+        , bitmask = 0x0010;
+    if ('contains' in node) {
+        method = 'contains';
+        bitmask = 1;
+    }
+
+    rocking:
+        while ((node = node && node.parentNode)) {
+            for (var i = nodes.length; i--;) {
+                if ((node[method](nodes[i]) & bitmask) !== bitmask)
+                    continue rocking;
+            }
+            return node;
+        }
+
+    return undefined;
+};
+
 ss._options = {};
 
 ss.uploadSetup = function( options ) {
@@ -683,6 +712,7 @@ ss.SimpleUpload = function( options ) {
         customHeaders: {},
         encodeHeaders: true,
         autoCalibrate: true,
+        relativeToParent: false,
         onBlankSubmit: function() {},
         onAbort: function( filename, uploadBtn, size ) {},
         onChange: function( filename, extension, uploadBtn, size, file ) {},
@@ -719,6 +749,13 @@ ss.SimpleUpload = function( options ) {
 
     delete this._opts.button;
     this._opts.button = options = null;
+
+    this._parentElement = document.documentElement;
+    if ( this._opts.relativeToParent ) {
+      this._parentElement = this._btns.length > 1
+        ? ss.getCommonAncestor.apply(this, this._btns)
+        : this._btns.length === 1 ? this._btns[0].parentNode : document.documentElement;;
+    }
 
     if ( this._opts.multiple === false ) {
         this._opts.maxUploads = 1;
@@ -1034,10 +1071,12 @@ ss.SimpleUpload.prototype = {
     updatePosition: function( btn ) {
         "use strict";
 
+      var self = this;
+
         btn = !btn ? this._btns[0] : btn;
 
         if ( btn && this._input && this._input.parentNode ) {
-            ss.copyLayout( btn, this._input.parentNode );
+            ss.copyLayout( btn, this._input.parentNode, self._parentElement );
         }
 
         btn = null;
@@ -1060,7 +1099,7 @@ ss.SimpleUpload.prototype = {
             }
 
             self._overBtn = elem;
-            ss.copyLayout( elem, self._input.parentNode );
+            ss.copyLayout( elem, self._input.parentNode, self._parentElement );
             self._input.parentNode.style.visibility = 'visible';
         });
 
@@ -2073,7 +2112,15 @@ ss.extendObj( ss.SimpleUpload.prototype, {
         }
 
         div.appendChild( this._input );
-        document.body.appendChild( div );
+
+        if (self._opts.relativeToParent) {
+            var parentPositionStyle = getComputedStyle(self._parentElement).position;
+            if (parentPositionStyle !== 'fixed' || parentPositionStyle !== 'absolute')
+                self._parentElement.style.position = 'relative';
+            self._parentElement.appendChild(div);
+        } else {
+            document.body.appendChild( div );
+        }
         div = null;
     },
 
