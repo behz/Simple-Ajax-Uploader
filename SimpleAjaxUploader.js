@@ -751,12 +751,21 @@ ss.SimpleUpload = function( options ) {
     delete this._opts.button;
     this._opts.button = options = null;
 
+    // Set this._parentElement. the container that transparent <input> file element will be added to it.
+    // set documentElement as default container
     this._parentElement = document.documentElement;
-    if ( this._opts.relativeToParent ) {
-      this._parentElement = this._btns.length > 1
-        ? ss.getCommonAncestor.apply(this, this._btns)
-        : this._btns.length === 1 ? this._btns[0].parentNode : document.documentElement;;
+
+    if ( this._opts.relativeToParent && this._btns.length !== 0 ) {
+
+      this._parentElement = (this._btns.length === 1)
+
+        // There is one Button, set parent node as container
+        ? this._btns[0].parentNode
+
+        // There are multiple buttons, set common ancestor of buttons as container
+        : ss.getCommonAncestor.apply(this, this._btns);
     }
+
 
     if ( this._opts.multiple === false ) {
         this._opts.maxUploads = 1;
@@ -2114,10 +2123,13 @@ ss.extendObj( ss.SimpleUpload.prototype, {
 
         div.appendChild( this._input );
 
+        // Add elements on the page
         if (self._opts.relativeToParent) {
+            // Set parent position style to 'relative' if it is not already 'fixed' or 'absolute'
             var parentPositionStyle = getComputedStyle(self._parentElement).position;
-            if (parentPositionStyle !== 'fixed' || parentPositionStyle !== 'absolute')
+            if (parentPositionStyle !== 'fixed' || parentPositionStyle !== 'absolute') {
                 self._parentElement.style.position = 'relative';
+            }
             self._parentElement.appendChild(div);
         } else {
             document.body.appendChild( div );
