@@ -2126,7 +2126,7 @@ ss.extendObj( ss.SimpleUpload.prototype, {
         // Add elements on the page
         if (self._opts.relativeToParent) {
             // Set parent position style to 'relative' if it is not already 'fixed' or 'absolute'
-            var parentPositionStyle = getComputedStyle(self._parentElement).position;
+            var parentPositionStyle = ss.getStyle( self._parentElement, 'position' ).toLowerCase();
             if (parentPositionStyle !== 'fixed' || parentPositionStyle !== 'absolute') {
                 self._parentElement.style.position = 'relative';
             }
